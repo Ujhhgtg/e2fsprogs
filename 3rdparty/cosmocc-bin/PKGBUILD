@@ -1,0 +1,32 @@
+# Maintainer: Fey Xie <feyxiexzf@gmail.com>
+# Contributor: Asger Hautop Drewsen <asger@tyilo.com>
+
+pkgname=cosmocc-bin
+pkgver=4.0.2
+pkgrel=1
+pkgdesc="cosmopolitan toolchain: build-once run-anywhere c library"
+arch=('x86_64' 'aarch64')
+url="https://justine.lol/cosmopolitan/index.html"
+license=('ISC')
+provides=('cosmocc')
+conflicts=('cosmocc' 'cosmocc-git')
+depends=()
+options=('!strip')
+source=(
+    "cosmocc.zip::https://cosmo.zip/pub/cosmocc/cosmocc-${pkgver}.zip"
+    "bin-wrapper"
+)
+sha256sums=('85b8c37a406d862e656ad4ec14be9f6ce474c1b436b9615e91a55208aced3f44'
+            '70686a9259f969c7a1fcf6a0980e7f5852ac1fdeada895368ff78c6e0c7b77a1')
+
+package() {
+    install -dm755 "${pkgdir}/opt/cosmocc"
+    cp -r "${srcdir}/"* "${pkgdir}/opt/cosmocc/"
+    
+    install -dm755 "${pkgdir}/usr/bin"
+    cd "${pkgdir}/opt/cosmocc/bin"
+    for bin in cosmo* aarch64-* x86_64-*; do
+        bin_name="$(basename "$bin")"
+        cp "${srcdir}/bin-wrapper" "${pkgdir}/usr/bin/${bin_name}"
+    done
+}

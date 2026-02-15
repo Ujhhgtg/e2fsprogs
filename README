@@ -1,19 +1,87 @@
-	This is the new version (1.47.3) of the second extended file
-system management programs.
+# e2fsprogs for windows (cosmopolitan libc port)
 
-	From time to time, I release new versions of e2fsprogs, to fix
-bugs and to make the utilities more robust.  You can always find
-information about the latest version at the the e2fsprogs web page,
-which is:
+this is a naive windows port (not really) of e2fsprogs, the standard ext2/3/4 filesystem utilities for linux, using cosmopolitan libc.
 
-	http://e2fsprogs.sourceforge.net
+## overview
 
-	The INSTALL file has instructions on building and installing
-e2fsprogs.  Provisions for building Red Hat RPMs and Debian dpkg files
-are supplied as well.
+e2fsprogs is a set of utilities for creating, checking, and managing ext2/3/4 filesystems.
+this windows port allows you to work with ext filesystem images directly on windows without needing wsl or a vm.
 
-	In case of bugs in these programs, please contact Ted Ts'o at
-tytso@mit.edu or tytso@alum.mit.edu.  See the e2fsck man page for
-suggestions of what sort of information to include when submitting bug
-reports for these programs.
+## compile-time requirements
 
+- `cosmocc` - compiles c projects with cosmopolitan libc
+
+note: for arch linux users' convenience, an up-to-date pkgbuild is provided at ./3rdparty/cosmocc-bin/
+
+## building
+
+```bash
+./build-ape.sh
+```
+
+**note: only the following binaries are built:**
+
+- `dist/mke2fs.com` - creates ext2/3/4 filesystems
+- `dist/debugfs.com` - inspects and modifies ext filesystems
+
+all other utilities in e2fsprogs (e2fsck, resize2fs, tune2fs, dumpe2fs, etc.) are **not built** in this port. you can try for yourself, however i have not tested these other binaries and do not provide support for them.
+
+## usage
+
+### creating a filesystem image
+
+```none
+# most features should work normally
+# the following ones are features that i have tested (and used personally)
+
+.\dist\mke2fs.com -t ext4 -F -L some_disk_label -O ^64bit,^metadata_csum,^orphan_file,^extra_isize image.img 1G
+```
+
+### inspecting & manipulating a filesystem image
+
+```none
+# most features should work normally
+# the following ones are features that i have tested (and used personally)
+
+./debugfs.com -w -R "mkdir /scripts" userdisk.img
+./debugfs.com -w -R "write some_script.sh /scripts/some_script.sh" image.img
+debugfs.com -w -R "sif /scripts/some_script.sh mode 0100755" image.img
+```
+
+## important warnings
+
+### platform restrictions & safety considerations
+
+**this port is designed exclusively for windows. running this software on unix-like platforms is unsafe.**
+
+the port was developed specifically for windows and includes modifications that are unsafe with unix-like operating systems. running these binaries on linux, macos, bsd,
+or other unix variants is **not recommended** and may cause data corruption or system instability.
+
+during the windows porting process, several safety features were removed or disabled:
+
+- file locking mechanisms were removed for compatibility
+- platform-specific safety checks were stripped
+- certain error handling paths were skipped
+
+these changes make the binaries **unsafe on unix-like systems** and could lead to:
+
+- filesystem corruption
+- data loss
+- unexpected behavior
+- potential security issues
+
+(i dont think anyone would go so insane that consider using this **windows** port instead)
+
+## runtime requirements
+
+- windows (idk the oldest possible version, havent tried)
+- no additional runtime dependencies (statically linked thanks to cosmopolitan libc)
+
+## license
+
+this software ~~includes code from~~ is basically the original e2fsprogs project. follows upstream.
+
+## contributing
+
+this is a personal port of the original e2fsprogs. please do not contact the upstream
+e2fsprogs project with issues related to this windows port. please also do not contact me if this doesnt work because this is already very wrong at the first place.

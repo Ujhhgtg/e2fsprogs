@@ -1,0 +1,17 @@
+pkgbase = cosmocc-bin
+	pkgdesc = Compiler for Cosmopolitan Libc
+	pkgver = 4.0.2
+	pkgrel = 1
+	url = https://justine.lol/cosmopolitan/index.html
+	arch = x86_64
+	arch = aarch64
+	license = ISC
+	provides = cosmocc
+	conflicts = cosmocc
+	options = !strip
+	source = cosmocc.zip::https://cosmo.zip/pub/cosmocc/cosmocc-4.0.2.zip
+	source = bin-wrapper
+	sha256sums = 85b8c37a406d862e656ad4ec14be9f6ce474c1b436b9615e91a55208aced3f44
+	sha256sums = 70686a9259f969c7a1fcf6a0980e7f5852ac1fdeada895368ff78c6e0c7b77a1
+
+pkgname = cosmocc-bin
