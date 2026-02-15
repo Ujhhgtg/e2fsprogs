@@ -238,7 +238,7 @@ END {
 		tab_base_low, table_item_count) > outfile
 	}
 	print "" > outfile
-	print "static struct et_list link = { 0, 0 };" > outfile
+	print "static struct et_list link_ = { 0, 0 };" > outfile
 	print "" > outfile
 	print "void initialize_" table_name "_error_table_r(struct et_list **list);" > outfile
 	print "void initialize_" table_name "_error_table(void);" > outfile
@@ -257,8 +257,8 @@ END {
 	print "            return;" > outfile
 	print "    et = malloc(sizeof(struct et_list));" > outfile
 	print "    if (et == 0) {" > outfile
-	print "        if (!link.table)" > outfile
-	print "            et = &link;" > outfile
+	print "        if (!link_.table)" > outfile
+	print "            et = &link_;" > outfile
 	print "        else" > outfile
 	print "            return;" > outfile
 	print "    }" > outfile
