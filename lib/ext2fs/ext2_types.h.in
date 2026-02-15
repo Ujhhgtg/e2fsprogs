@@ -116,7 +116,7 @@ typedef __U64_TYPEDEF __u64;
 typedef unsigned int	__u64;
 #else
 #if (@SIZEOF_LONG_LONG@ == 8)
-typedef unsigned long long	__u64;
+typedef unsigned long	__u64;
 #else
 #if (@SIZEOF_LONG@ == 8)
 typedef unsigned long	__u64;

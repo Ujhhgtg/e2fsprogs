@@ -2,6 +2,10 @@
  * scantest.c - test the speed of the inode scan routine
  */
 
+#if defined(__COSMOPOLITAN__)
+#define sbrk(x) ((void *)0)
+#endif
+
 #include "config.h"
 #include <string.h>
 #include <fcntl.h>

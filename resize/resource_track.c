@@ -9,6 +9,9 @@
  * %End-Header%
  */
 
+#if defined(__COSMOPOLITAN__)
+#define sbrk(x) ((void *)0)
+#endif
 
 #include "config.h"
 #include "resize2fs.h"
