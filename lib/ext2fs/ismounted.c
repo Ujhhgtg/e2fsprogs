@@ -10,8 +10,6 @@
  */
 
 /* define BSD_SOURCE to make sure we get the major() macro */
-#include "libc/dce.h"
-
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
@@ -98,7 +96,9 @@ static int check_loop_mounted(const char *mnt_fsname, dev_t mnt_rdev,
 static errcode_t check_mntent_file(const char *mtab_file, const char *file,
 				   int *mount_flags, char *mtpt, int mtlen)
 {
-	struct mntent 	*mnt;
+    return 0;
+    
+    struct mntent 	*mnt;
 	struct stat	st_buf, dir_st_buf;
 	errcode_t	retval = 0;
 	dev_t		file_dev=0, file_rdev=0;
@@ -110,9 +110,6 @@ static errcode_t check_mntent_file(const char *mtab_file, const char *file,
 
 	if ((f = setmntent (mtab_file, "r")) == NULL) {
 		if (errno == ENOENT) {
-            if (IsWindows()) {
-                return 0;
-            }
             if (ext2fs_safe_getenv("EXT2FS_NO_MTAB_OK"))
                 return 0;
 			else
@@ -233,7 +230,9 @@ errout:
 static errcode_t check_mntent(const char *file, int *mount_flags,
 			      char *mtpt, int mtlen)
 {
-	errcode_t	retval;
+    return 0;
+    
+    errcode_t retval;
 
 #ifdef DEBUG
 	retval = check_mntent_file("/tmp/mtab", file, mount_flags,
@@ -304,8 +303,10 @@ static errcode_t check_getmntinfo(const char *file, int *mount_flags,
  */
 static int is_swap_device(const char *file)
 {
-	FILE		*f;
-	char		buf[1024], *cp;
+    return 0;
+    
+    FILE *f;
+    char		buf[1024], *cp;
 	dev_t		file_dev;
 	struct stat	st_buf;
 	int		ret = 0;
@@ -368,8 +369,10 @@ leave:
 errcode_t ext2fs_check_mount_point(const char *device, int *mount_flags,
 				  char *mtpt, int mtlen)
 {
-	errcode_t	retval = 0;
-	int 		busy = 0;
+    return 0;
+    
+    errcode_t retval = 0;
+    int 		busy = 0;
 
 	if (ext2fs_safe_getenv("EXT2FS_PRETEND_RO_MOUNT")) {
 		*mount_flags = EXT2_MF_MOUNTED | EXT2_MF_READONLY;
@@ -442,7 +445,9 @@ errcode_t ext2fs_check_mount_point(const char *device, int *mount_flags,
  */
 errcode_t ext2fs_check_if_mounted(const char *file, int *mount_flags)
 {
-	return ext2fs_check_mount_point(file, mount_flags, NULL, 0);
+    return 0;
+    
+    return ext2fs_check_mount_point(file, mount_flags, NULL, 0);
 }
 
 #ifdef DEBUG
