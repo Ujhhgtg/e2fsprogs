@@ -95,7 +95,6 @@ static int	num_backups = 2; /* number of backup bg's for sparse_super2 */
 static uid_t	root_uid;
 static mode_t 	root_perms = (mode_t)-1;
 static gid_t	root_gid;
-static char	*root_selinux = NULL;
 int	journal_size;
 int	journal_flags;
 int	journal_fc_size;
@@ -513,35 +512,6 @@ static void create_root_dir(ext2_filsys fs)
 		if (retval) {
 			com_err("ext2fs_write_inode", retval, "%s",
 				_("while setting root inode ownership"));
-			exit(1);
-		}
-	}
-
-	if (root_selinux) {
-		struct ext2_xattr_handle *handle;
-		retval = ext2fs_xattrs_open(fs, EXT2_ROOT_INO, &handle);
-		if (retval) {
-			com_err("ext2fs_xattrs_open", retval,
-				_("while setting root inode label"));
-			exit(1);
-		}
-		retval = ext2fs_xattrs_read(handle);
-		if (retval) {
-			com_err("ext2fs_xattrs_read", retval,
-				_("while setting root inode label"));
-			exit(1);
-		}
-		retval = ext2fs_xattr_set(handle, "security.selinux",
-					  root_selinux, strlen(root_selinux));
-		if (retval) {
-			com_err("ext2fs_xattr_set", retval,
-				_("while setting root inode label"));
-			exit(1);
-		}
-		retval = ext2fs_xattrs_close(&handle);
-		if (retval) {
-			com_err("ext2fs_xattrs_close", retval,
-				_("while setting root inode label"));
 			exit(1);
 		}
 	}
@@ -1119,21 +1089,6 @@ static void parse_extended_opts(struct ext2_super_block *param,
 			if (arg) {
 				root_perms = strtoul(arg, &p, 8);
 			}
-		} else if (!strcmp(token, "root_selinux")) {
-			if (arg) {
-				root_selinux = realloc(root_selinux,
-						       strlen(arg) + 1);
-				if (!root_selinux) {
-					com_err(program_name, ENOMEM, "%s",
-						_("in malloc for root_selinux"));
-					exit(1);
-				}
-				strcpy(root_selinux, arg);
-			} else {
-				r_usage++;
-				badopt = token;
-				continue;
-			}
 		} else if (!strcmp(token, "discard")) {
 			discard = 1;
 		} else if (!strcmp(token, "nodiscard")) {
@@ -1219,14 +1174,12 @@ static void parse_extended_opts(struct ext2_super_block *param,
 			"\tlazy_journal_init=<0 to disable, 1 to enable>\n"
 			"\troot_owner=<uid of root dir>:<gid of root dir>\n"
 			"\troot_perms=<octal root directory permissions>\n"
-			"\troot_selinux=<selinux root directory label>\n"
 			"\ttest_fs\n"
 			"\tdiscard\n"
 			"\tnodiscard\n"
 			"\trevision=<revision>\n"
 			"\tencoding=<encoding>\n"
 			"\tencoding_flags=<flags>\n"
-			"\thash_seed=<UUID for hash seed>\n"
 			"\tquotatype=<quota type(s) to be enabled>\n"
 			"\tassume_storage_prezeroed=<0 to disable, 1 to enable>\n\n"),
 			badopt ? badopt : "");
@@ -1349,15 +1302,6 @@ static errcode_t init_list(struct str_list *sl)
 		return ENOMEM;
 	sl->list[0] = 0;
 	return 0;
-}
-
-static void free_strlist(char **list)
-{
-	int	i;
-
-	for (i=0; list[i]; i++)
-		free(list[i]);
-	free(list);
 }
 
 static errcode_t push_string(struct str_list *sl, const char *str)
@@ -1708,7 +1652,7 @@ static void PRS(int argc, char *argv[])
 	int		default_csum_seed = 0;
 	errcode_t	retval;
 	char *		oldpath = getenv("PATH");
-	struct str_list extended_opts;
+	char *		extended_opts = 0;
 	char *		fs_type = 0;
 	char *		usage_types = 0;
 	/*
@@ -1806,13 +1750,6 @@ profile_error:
 			journal_size = -1;
 	}
 
-	retval = init_list(&extended_opts);
-	if (retval) {
-		com_err(program_name, retval, "%s",
-			_("in malloc for extended_opts"));
-		exit(1);
-	}
-
 	while ((c = getopt (argc, argv,
 		    "b:cd:e:g:i:jl:m:no:qr:s:t:vC:DE:FG:I:J:KL:M:N:O:R:ST:U:Vz:")) != EOF) {
 		switch (c) {
@@ -1825,8 +1762,7 @@ profile_error:
 					_("invalid block size - %s"), optarg);
 				exit(1);
 			}
-			if (blocksize > 4096 &&
-			    access("/sys/fs/ext4/features/blocksize_gt_pagesize", F_OK))
+			if (blocksize > 4096)
 				fprintf(stderr, _("Warning: blocksize %d not "
 						  "usable on most systems.\n"),
 					blocksize);
@@ -1859,7 +1795,7 @@ profile_error:
 				_("'-R' is deprecated, use '-E' instead"));
 			/* fallthrough */
 		case 'E':
-			push_string(&extended_opts, optarg);
+			extended_opts = optarg;
 			break;
 		case 'e':
 			if (strcmp(optarg, "continue") == 0)
@@ -2567,9 +2503,10 @@ profile_error:
 		}
 
 		if (dev_param.dax && blocksize != sys_page_size) {
-			printf(_("%s is capable of DAX but current block size "
-				 "%u is different from system page size %u so "
-				 "filesystem will not support DAX.\n"),
+			fprintf(stderr,
+				_("%s is capable of DAX but current block size "
+				  "%u is different from system page size %u so "
+				  "filesystem will not support DAX.\n"),
 				device_name, blocksize, sys_page_size);
 		}
 	}
@@ -2588,8 +2525,7 @@ profile_error:
 		fs_param.s_desc_size = EXT2_MIN_DESC_SIZE_64BIT;
 
 	/* This check should happen beyond the last assignment to blocksize */
-	if (blocksize > sys_page_size &&
-	    access("/sys/fs/ext4/features/blocksize_gt_pagesize", F_OK)) {
+	if (blocksize > sys_page_size) {
 		if (!force) {
 			com_err(program_name, 0,
 				_("%d-byte blocks too big for system (max %d)"),
@@ -2679,10 +2615,8 @@ profile_error:
 			free(tmp);
 	}
 
-	/* Get options from commandline */
-	for (cpp = extended_opts.list; *cpp; cpp++)
-		parse_extended_opts(&fs_param, *cpp);
-	free_strlist(extended_opts.list);
+	if (extended_opts)
+		parse_extended_opts(&fs_param, extended_opts);
 
 	if (fs_param.s_rev_level == EXT2_GOOD_OLD_REV) {
 		if (fs_features) {
@@ -3774,6 +3708,8 @@ no_journal:
 	remove_error_table(&et_ext2_error_table);
 	remove_error_table(&et_prof_error_table);
 	profile_release(profile);
-	free_strlist(fs_types);
+	for (i=0; fs_types[i]; i++)
+		free(fs_types[i]);
+	free(fs_types);
 	return retval;
 }
