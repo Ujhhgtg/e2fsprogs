@@ -268,7 +268,9 @@ Cause a kernel panic.
 .TP
 .BI \-E " extended-options"
 Set extended options for the file system.  Extended options are comma
-separated, and may take an argument using the equals ('=') sign.  The
+separated, and may take an argument using the equals ('=') sign.  Multiple
+.B \-E
+options may also be used. The
 .B \-E
 option used to be
 .B \-R
@@ -320,6 +322,10 @@ In the default configuration, the
 .I strict
 flag is disabled.
 .TP
+.BI hash_seed= UUID
+Use the specified UUID as the seed for hashing, rather than generating a
+random seed each time. Intended for use with reproducible builds.
+.TP
 .B lazy_itable_init\fR[\fB= \fI<0 to disable, 1 to enable>\fR]
 If enabled and the uninit_bg feature is enabled, the inode table will
 not be fully initialized by
@@ -368,7 +374,6 @@ be 0, 1, or 2 backup superblocks created in the file system.
 .BI offset= offset
 Create the file system at an offset from the beginning of the device or
 file.  This can be useful when creating disk images for virtual machines.
-.TP
 .TP
 .BI orphan_file_size= size
 Set size of the file for tracking unlinked but still open inodes and inodes
@@ -421,6 +426,16 @@ file system to change based on the user running \fBmke2fs\fR.
 Specify the root directory permissions in octal format. If no permissions
 are specified then the root directory permissions would be set in accordance with
 the default filesystem umask.
+.TP
+.BI root_selinux= label
+Specify the root directory SELinux security context as
+.IR label ,
+typically
+.nh
+.B system_u:object_r:root_t
+with an optional level/range suffix such as
+.B :s0
+for MCS/MLS policy types.
 .TP
 .BI stride= stride-size
 Configure the file system for a RAID array with
@@ -723,6 +738,7 @@ the manual page
 Quiet execution.  Useful if
 .B mke2fs
 is run in a script.
+.TP
 .B \-S
 Write superblock and group descriptors only.  This is an extreme
 measure to be taken only in the very unlikely case that all of
