@@ -10,6 +10,8 @@
  */
 
 /* define BSD_SOURCE to make sure we get the major() macro */
+#include "libc/dce.h"
+
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
@@ -108,8 +110,11 @@ static errcode_t check_mntent_file(const char *mtab_file, const char *file,
 
 	if ((f = setmntent (mtab_file, "r")) == NULL) {
 		if (errno == ENOENT) {
-			if (ext2fs_safe_getenv("EXT2FS_NO_MTAB_OK"))
-				return 0;
+            if (IsWindows()) {
+                return 0;
+            }
+            if (ext2fs_safe_getenv("EXT2FS_NO_MTAB_OK"))
+                return 0;
 			else
 				return EXT2_ET_NO_MTAB_FILE;
 		}

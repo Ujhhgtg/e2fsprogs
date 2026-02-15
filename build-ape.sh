@@ -26,10 +26,11 @@ make -j$(nproc) -C lib/support
 # 2. Build the specific binaries you need
 # mke2fs: To create the partition on the image file
 make -j$(nproc) -C misc mke2fs
-
+x86_64-unknown-cosmo-objcopy -S -O binary ./misc/mke2fs mke2fs.com
 # debugfs: To modify/add/remove files inside the image without mounting
 make -j$(nproc) -C debugfs debugfs
+x86_64-unknown-cosmo-objcopy -S -O binary ./debugfs/debugfs debugfs.com
 
 echo "--- Build Complete ---"
-echo "mke2fs is at: misc/mke2fs"
-echo "debugfs is at: debugfs/debugfs"
+echo "mke2fs is at: mke2fs.com"
+echo "debugfs is at: debugfs.com"
