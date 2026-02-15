@@ -1092,12 +1092,12 @@ static errcode_t unixfd_open(const char *str_fd, int flags,
 	flags = 0;
 	if (fd_flags & O_RDWR)
 		flags |= IO_FLAG_RW;
-	if (fd_flags & O_EXCL)
-		flags |= IO_FLAG_EXCLUSIVE;
-#if defined(O_DIRECT)
-	if (fd_flags & O_DIRECT)
-		flags |= IO_FLAG_DIRECT_IO;
-#endif
+// 	if (fd_flags & O_EXCL)
+// 		flags |= IO_FLAG_EXCLUSIVE;
+// #if defined(O_DIRECT)
+// 	if (fd_flags & O_DIRECT)
+// 		flags |= IO_FLAG_DIRECT_IO;
+// #endif
 #endif  /* HAVE_FCNTL */
 
 	return unix_open_channel(str_fd, fd, flags, channel, unixfd_io_manager);
@@ -1113,12 +1113,12 @@ static errcode_t unix_open(const char *name, int flags,
 		return EXT2_ET_BAD_DEVICE_NAME;
 
 	open_flags = (flags & IO_FLAG_RW) ? O_RDWR : O_RDONLY;
-	if (flags & IO_FLAG_EXCLUSIVE)
-		open_flags |= O_EXCL;
-#if defined(O_DIRECT)
-	if (flags & IO_FLAG_DIRECT_IO)
-		open_flags |= O_DIRECT;
-#endif
+// 	if (flags & IO_FLAG_EXCLUSIVE)
+// 		open_flags |= O_EXCL;
+// #if defined(O_DIRECT)
+// 	if (flags & IO_FLAG_DIRECT_IO)
+// 		open_flags |= O_DIRECT;
+// #endif
 	fd = ext2fs_open_file(name, open_flags, 0);
 	if (fd < 0)
 		return errno;
