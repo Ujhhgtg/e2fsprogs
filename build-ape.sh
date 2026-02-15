@@ -5,12 +5,9 @@ export CXX=x86_64-unknown-cosmo-c++
 # Clean and Configure
 make clean
 ./configure \
-    --disable-e4defrag \
-    --disable-e4crypt \
     --disable-tls \
     --disable-nls \
     --disable-backtrace \
-    --without-readline \
     --prefix=/opt/cosmos/x86_64
 
 # 1. Build the supporting libraries first (Required for all binaries)
