@@ -2,6 +2,9 @@
 
 this is a naive windows port (not really) of e2fsprogs, the standard ext2/3/4 filesystem utilities for linux, using cosmopolitan libc.
 
+> **huge thanks to the [cosmopolitan libc](https://github.com/jart/cosmopolitan) project!**
+> this port could **never** exist without them. thank you for making this possible!
+
 ## overview
 
 e2fsprogs is a set of utilities for creating, checking, and managing ext2/3/4 filesystems.
