@@ -172,6 +172,7 @@ misc/e2fuzz
 misc/e2image
 misc/e2image.8
 misc/e2initrd_helper
+misc/e2label
 misc/e2label.8
 misc/e2mmpstatus
 misc/e2mmpstatus.8
