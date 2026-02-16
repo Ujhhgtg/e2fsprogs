@@ -59,6 +59,7 @@
 
 #ifdef HAVE_SETMNTENT
 /*
+ * !!! skipped on windows !!!
  * Check to see if a regular file is mounted.
  * If /etc/mtab/ is a symlink of /proc/mounts, you will need the following check
  * because the name in /proc/mounts is a loopback device not a regular file.
@@ -66,29 +67,11 @@
 static int check_loop_mounted(const char *mnt_fsname, dev_t mnt_rdev,
 				dev_t file_dev, ino_t file_ino)
 {
-#if defined(HAVE_LINUX_LOOP_H) && defined(HAVE_LINUX_MAJOR_H)
-	struct loop_info64 loopinfo = {0, };
-	int loop_fd, ret;
-
-	if (major(mnt_rdev) == LOOP_MAJOR) {
-		loop_fd = open(mnt_fsname, O_RDONLY);
-		if (loop_fd < 0)
-			return -1;
-
-		ret = ioctl(loop_fd, LOOP_GET_STATUS64, &loopinfo);
-		close(loop_fd);
-		if (ret < 0)
-			return -1;
-
-		if (file_dev == loopinfo.lo_device &&
-				file_ino == loopinfo.lo_inode)
-			return 1;
-	}
-#endif /* defined(HAVE_LINUX_LOOP_H) && defined(HAVE_LINUX_MAJOR_H) */
 	return 0;
 }
 
 /*
+ * !!! skipped on windows !!!
  * Helper function which checks a file in /etc/mtab format to see if a
  * filesystem is mounted.  Returns an error if the file doesn't exist
  * or can't be opened.
@@ -97,165 +80,14 @@ static errcode_t check_mntent_file(const char *mtab_file, const char *file,
 				   int *mount_flags, char *mtpt, int mtlen)
 {
     return 0;
-    
-    struct mntent 	*mnt;
-	struct stat	st_buf, dir_st_buf;
-	errcode_t	retval = 0;
-	dev_t		file_dev=0, file_rdev=0;
-	ino_t		file_ino=0;
-	FILE 		*f;
-	int		fd;
-
-	*mount_flags = 0;
-
-	if ((f = setmntent (mtab_file, "r")) == NULL) {
-		if (errno == ENOENT) {
-            if (ext2fs_safe_getenv("EXT2FS_NO_MTAB_OK"))
-                return 0;
-			else
-				return EXT2_ET_NO_MTAB_FILE;
-		}
-		return errno;
-	}
-	if (stat(file, &st_buf) == 0) {
-		if (ext2fsP_is_disk_device(st_buf.st_mode)) {
-#ifndef __GNU__ /* The GNU hurd is broken with respect to stat devices */
-			file_rdev = st_buf.st_rdev;
-#endif	/* __GNU__ */
-		} else {
-			file_dev = st_buf.st_dev;
-			file_ino = st_buf.st_ino;
-		}
-	}
-	while ((mnt = getmntent (f)) != NULL) {
-		if (mnt->mnt_fsname[0] != '/')
-			continue;
-		if (strcmp(file, mnt->mnt_fsname) == 0) {
-			if (stat(mnt->mnt_dir, &st_buf) != 0)
-				continue;
-			if (file_rdev && (file_rdev != st_buf.st_dev)) {
-#ifdef DEBUG
-				printf("Bogus entry in %s!  "
-				       "(%s is not mounted on %s)\n",
-				       mtab_file, file, mnt->mnt_dir);
-#endif /* DEBUG */
-				continue;
-			}
-			break;
-		}
-		if (stat(mnt->mnt_fsname, &st_buf) == 0) {
-			if (ext2fsP_is_disk_device(st_buf.st_mode)) {
-#ifndef __GNU__
-				if (file_rdev &&
-				    (file_rdev == st_buf.st_rdev)) {
-					if (stat(mnt->mnt_dir,
-						 &dir_st_buf) != 0)
-						continue;
-					if (file_rdev == dir_st_buf.st_dev)
-						break;
-				}
-				if (check_loop_mounted(mnt->mnt_fsname,
-						st_buf.st_rdev, file_dev,
-						file_ino) == 1)
-					break;
-#endif	/* __GNU__ */
-			} else {
-				if (file_dev && ((file_dev == st_buf.st_dev) &&
-						 (file_ino == st_buf.st_ino)))
-					break;
-			}
-		}
-	}
-
-	if (mnt == 0) {
-#ifndef __GNU__ /* The GNU hurd is broken with respect to stat devices */
-		/*
-		 * Do an extra check to see if this is the root device.  We
-		 * can't trust /etc/mtab, and /proc/mounts will only list
-		 * /dev/root for the root filesystem.  Argh.  Instead we
-		 * check if the given device has the same major/minor number
-		 * as the device that the root directory is on.
-		 */
-		if (file_rdev && stat("/", &st_buf) == 0) {
-			if (st_buf.st_dev == file_rdev) {
-				*mount_flags = EXT2_MF_MOUNTED;
-				if (mtpt)
-					strncpy(mtpt, "/", mtlen);
-				goto is_root;
-			}
-		}
-#endif	/* __GNU__ */
-		goto errout;
-	}
-	*mount_flags = EXT2_MF_MOUNTED;
-
-#ifdef MNTOPT_RO
-	/* Check to see if the ro option is set */
-	if (hasmntopt(mnt, MNTOPT_RO))
-		*mount_flags |= EXT2_MF_READONLY;
-#endif
-
-	if (mtpt)
-		strncpy(mtpt, mnt->mnt_dir, mtlen);
-	/*
-	 * Check to see if we're referring to the root filesystem.
-	 * If so, do a manual check to see if we can open /etc/mtab
-	 * read/write, since if the root is mounted read/only, the
-	 * contents of /etc/mtab may not be accurate.
-	 */
-	if (!strcmp(mnt->mnt_dir, "/")) {
-is_root:
-#define TEST_FILE "/.ismount-test-file"
-		*mount_flags |= EXT2_MF_ISROOT;
-		fd = open(TEST_FILE, O_RDWR|O_CREAT, 0600);
-		if (fd < 0) {
-			if (errno == EROFS)
-				*mount_flags |= EXT2_MF_READONLY;
-		} else
-			close(fd);
-		(void) unlink(TEST_FILE);
-	}
-
-	if (mnt && mnt->mnt_type &&
-	    (!strcmp(mnt->mnt_type, "ext4") ||
-	     !strcmp(mnt->mnt_type, "ext3") ||
-	     !strcmp(mnt->mnt_type, "ext2")))
-		*mount_flags |= EXT2_MF_EXTFS;
-	retval = 0;
-errout:
-	endmntent (f);
-	return retval;
 }
-
+/*
+ * !!! skipped on windows !!!
+*/
 static errcode_t check_mntent(const char *file, int *mount_flags,
 			      char *mtpt, int mtlen)
 {
     return 0;
-    
-    errcode_t retval;
-
-#ifdef DEBUG
-	retval = check_mntent_file("/tmp/mtab", file, mount_flags,
-				   mtpt, mtlen);
-	if (retval == 0)
-		return 0;
-#endif /* DEBUG */
-#ifdef __linux__
-	retval = check_mntent_file("/proc/mounts", file, mount_flags,
-				   mtpt, mtlen);
-	if (retval == 0)
-		return 0;
-#endif /* __linux__ */
-#if defined(MOUNTED) || defined(_PATH_MOUNTED)
-#ifndef MOUNTED
-#define MOUNTED _PATH_MOUNTED
-#endif /* MOUNTED */
-	retval = check_mntent_file(MOUNTED, file, mount_flags, mtpt, mtlen);
-	return retval;
-#else
-	*mount_flags = 0;
-	return 0;
-#endif /* defined(MOUNTED) || defined(_PATH_MOUNTED) */
 }
 
 #else
@@ -299,63 +131,16 @@ static errcode_t check_getmntinfo(const char *file, int *mount_flags,
 #endif /* HAVE_SETMNTENT */
 
 /*
+ * !!! skipped on windows !!!
  * Check to see if we're dealing with the swap device.
  */
 static int is_swap_device(const char *file)
 {
     return 0;
-    
-    FILE *f;
-    char		buf[1024], *cp;
-	dev_t		file_dev;
-	struct stat	st_buf;
-	int		ret = 0;
-
-	file_dev = 0;
-#ifndef __GNU__ /* The GNU hurd is broken with respect to stat devices */
-	if ((stat(file, &st_buf) == 0) &&
-	    ext2fsP_is_disk_device(st_buf.st_mode))
-		file_dev = st_buf.st_rdev;
-#endif	/* __GNU__ */
-
-	if (!(f = fopen("/proc/swaps", "r")))
-		return 0;
-	/* Skip the first line */
-	if (!fgets(buf, sizeof(buf), f))
-		goto leave;
-	if (*buf && strncmp(buf, "Filename\t", 9))
-		/* Linux <=2.6.19 contained a bug in the /proc/swaps
-		 * code where the header would not be displayed
-		 */
-		goto valid_first_line;
-
-	while (fgets(buf, sizeof(buf), f)) {
-valid_first_line:
-		if ((cp = strchr(buf, ' ')) != NULL)
-			*cp = 0;
-		if ((cp = strchr(buf, '\t')) != NULL)
-			*cp = 0;
-		if (strcmp(buf, file) == 0) {
-			ret++;
-			break;
-		}
-#ifndef __GNU__
-		if (file_dev && (stat(buf, &st_buf) == 0) &&
-		    ext2fsP_is_disk_device(st_buf.st_mode) &&
-		    file_dev == st_buf.st_rdev) {
-			ret++;
-			break;
-		}
-#endif 	/* __GNU__ */
-	}
-
-leave:
-	fclose(f);
-	return ret;
 }
 
-
 /*
+ * !!! skipped on windows !!!
  * ext2fs_check_mount_point() fills determines if the device is
  * mounted or otherwise busy, and fills in mount_flags with one or
  * more of the following flags: EXT2_MF_MOUNTED, EXT2_MF_ISROOT,
@@ -370,84 +155,16 @@ errcode_t ext2fs_check_mount_point(const char *device, int *mount_flags,
 				  char *mtpt, int mtlen)
 {
     return 0;
-    
-    errcode_t retval = 0;
-    int 		busy = 0;
-
-	if (ext2fs_safe_getenv("EXT2FS_PRETEND_RO_MOUNT")) {
-		*mount_flags = EXT2_MF_MOUNTED | EXT2_MF_READONLY;
-		if (ext2fs_safe_getenv("EXT2FS_PRETEND_ROOTFS"))
-			*mount_flags = EXT2_MF_ISROOT;
-		return 0;
-	}
-	if (ext2fs_safe_getenv("EXT2FS_PRETEND_RW_MOUNT")) {
-		*mount_flags = EXT2_MF_MOUNTED;
-		if (ext2fs_safe_getenv("EXT2FS_PRETEND_ROOTFS"))
-			*mount_flags = EXT2_MF_ISROOT;
-		return 0;
-	}
-
-#ifdef __linux__ /* This only works on Linux 2.6+ systems */
-	{
-		struct stat st_buf;
-
-		if (stat(device, &st_buf) == 0 &&
-		    ext2fsP_is_disk_device(st_buf.st_mode)) {
-			int fd = open(device, O_RDONLY | O_EXCL);
-
-			if (fd >= 0) {
-				/*
-				 * The device is not busy so it's
-				 * definitelly not mounted. No need to
-				 * to perform any more checks.
-				 */
-				close(fd);
-				*mount_flags = 0;
-				return 0;
-			} else if (errno == EBUSY) {
-				busy = 1;
-			}
-		}
-	}
-#endif
-
-	if (is_swap_device(device)) {
-		*mount_flags = EXT2_MF_MOUNTED | EXT2_MF_SWAP;
-		if (mtpt)
-			strncpy(mtpt, "<swap>", mtlen);
-	} else {
-#ifdef HAVE_SETMNTENT
-		retval = check_mntent(device, mount_flags, mtpt, mtlen);
-#else
-#ifdef HAVE_GETMNTINFO
-		retval = check_getmntinfo(device, mount_flags, mtpt, mtlen);
-#else
-#if defined(__GNUC__) && !defined(_WIN32)
- #warning "Can't use getmntent or getmntinfo to check for mounted filesystems!"
-#endif
-		*mount_flags = 0;
-#endif /* HAVE_GETMNTINFO */
-#endif /* HAVE_SETMNTENT */
-	}
-	if (retval)
-		return retval;
-
-	if (busy)
-		*mount_flags |= EXT2_MF_BUSY;
-
-	return 0;
 }
 
 /*
+ * !!! skipped on windows !!!
  * ext2fs_check_if_mounted() sets the mount_flags EXT2_MF_MOUNTED,
  * EXT2_MF_READONLY, and EXT2_MF_ROOT
- *
  */
 errcode_t ext2fs_check_if_mounted(const char *file, int *mount_flags)
 {
     return 0;
-    
-    return ext2fs_check_mount_point(file, mount_flags, NULL, 0);
 }
 
 #ifdef DEBUG

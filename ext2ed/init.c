@@ -604,30 +604,15 @@ int get_next_option (FILE *fp,char *option,char *value)
 	return (1);
 }
 
+/*
+ * !!! skipped on windows !!!
+*/
 void check_mounted (char *name)
 
 {
-	FILE *fp;
-	char *ptr;
-	char current_line [500],current_word [200];
+    wprintw(command_win, "Warning - Skipping check of /etc/mtab on Windows.\n");
+    refresh_command_win();
+    mounted = 0;
 
-	mounted=0;
-
-	if ( (fp=fopen ("/etc/mtab","rt"))==NULL) {
-		wprintw (command_win,"Error - Failed to open /etc/mtab. Assuming filesystem is mounted.\n");
-		refresh_command_win ();mounted=1;return;
-	};
-
-	while (!feof (fp)) {
-		fgets (current_line,500,fp);
-		if (feof (fp)) break;
-		ptr=parse_word (current_line,current_word);
-		if (strcasecmp (current_word,name)==0) {
-			mounted=1;fclose (fp);return;
-		}
-	};
-
-	fclose (fp);
-
-	return;
+    return;
 }

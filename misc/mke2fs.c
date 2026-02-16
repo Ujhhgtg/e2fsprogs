@@ -2870,7 +2870,7 @@ static int should_do_undo(const char *name)
 	if (!force_undo && (!csum_flag || !lazy_itable_init))
 		return 0;
 
-	retval = manager->open(name, IO_FLAG_EXCLUSIVE,  &channel);
+	retval = manager->open(name, 0,  &channel);
 	if (retval) {
 		/*
 		 * We don't handle error cases instead we

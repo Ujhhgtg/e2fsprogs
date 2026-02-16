@@ -14,20 +14,30 @@ this windows port allows you to work with ext filesystem images directly on wind
 
 - `cosmocc` - compiles c projects with cosmopolitan libc
 
-note: for arch linux users' convenience, an up-to-date pkgbuild is provided at ./3rdparty/cosmocc-bin/
+note: for arch linux users' convenience, an up-to-date pkgbuild is provided at ./external/cosmocc-bin/.
 
 ## building
 
 ```bash
-./build-ape.sh
+./build-ape.fish
 ```
 
 **note: only the following binaries are built:**
 
-- `dist/mke2fs.com` - creates ext2/3/4 filesystems
-- `dist/debugfs.com` - inspects and modifies ext filesystems
+- `mke2fs` (tested)
+- `debugfs` (tested)
+- `e2fsck`
+- `resize2fs`
+- `tune2fs`
+- `mklost+found`
+- `e2freefrag`
+- `e2image`
+- `e2label`
+- `chattr`
+- `e2undo`
+- `dumpe2fs`
 
-all other utilities in e2fsprogs (e2fsck, resize2fs, tune2fs, dumpe2fs, etc.) are **not built** in this port. you can try for yourself, however i have not tested these other binaries and do not provide support for them.
+all other utilities are **not built** in this port. you can try for yourself, however i have not tested these other binaries and do not provide support for them.
 
 ## usage
 

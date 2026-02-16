@@ -39,6 +39,8 @@ extern int optind;
 
 #define VOLNAMSZ 16
 
+#define EXT2_LEN_STR(buf) (int)sizeof(buf), (char *)buf
+
 struct ext2_super_block {
 	char  s_dummy0[56];
 	unsigned char  s_magic[2];

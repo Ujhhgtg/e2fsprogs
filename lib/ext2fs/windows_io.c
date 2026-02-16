@@ -636,12 +636,6 @@ static errcode_t windows_open(const char *name, int flags, io_channel *channel)
 		return EXT2_ET_NO_MEMORY;
 
 	open_flags = (flags & IO_FLAG_RW) ? O_RDWR : O_RDONLY;
-	if (flags & IO_FLAG_EXCLUSIVE)
-		open_flags |= O_EXCL;
-#if defined(O_DIRECT)
-	if (flags & IO_FLAG_DIRECT_IO)
-		open_flags |= O_DIRECT;
-#endif
 
 	if (windows_open_device(data, open_flags)) {
 		ext2fs_free_mem(&data);

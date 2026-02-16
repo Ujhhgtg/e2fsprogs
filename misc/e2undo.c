@@ -372,7 +372,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Interpret the undo file */
-	retval = manager->open(tdb_file, IO_FLAG_EXCLUSIVE,
+	retval = manager->open(tdb_file, 0,
 			       &undo_ctx.undo_file);
 	if (retval) {
 		com_err(prg_name, errno,
@@ -454,7 +454,7 @@ int main(int argc, char *argv[])
 	}
 
 	retval = manager->open(device_name,
-			       IO_FLAG_EXCLUSIVE | (dry_run ? 0 : IO_FLAG_RW),
+			       (dry_run ? 0 : IO_FLAG_RW),
 			       &channel);
 	if (retval) {
 		com_err(prg_name, retval,
