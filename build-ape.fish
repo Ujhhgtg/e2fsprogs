@@ -62,11 +62,13 @@ end
 echo "$BOLD$CYAN== Building $PROJECT_NAME ==$NC"
 
 log_status "Configuring project"
+
+set -gx CFLAGS -O2 -g -Wall
+
 if not ./configure \
     --disable-nls \
     --disable-backtrace \
     --prefix=/opt/cosmos/x86_64 \
-    CFLAGS="-O2 -g -Wall" \
     >/tmp/build.log 2>&1
     printf "\n$RED""error$NC: Configuration failed. Check /tmp/build.log\n"
     exit 1
