@@ -11,19 +11,25 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
+
             - name: Install fish shell
               run: |
                   sudo apt update
                   sudo apt install -y fish
+
             - name: Download cosmocc
               run: |
                   curl -fsSL https://cosmo.zip/pub/cosmocc/cosmocc-4.0.2.zip -o cosmocc.zip
-                  sudo unzip -qo cosmocc.zip -d /opt
+                  sudo mkdir -p /opt/cosmocc
+                  sudo unzip -qo cosmocc.zip -d /opt/cosmocc
                   rm cosmocc.zip
+
             - name: Add cosmocc to PATH
               run: echo "/opt/cosmocc/bin" >> $GITHUB_PATH
+
             - name: Build
               run: fish build-ape.fish
+
             - uses: actions/upload-artifact@v4
               with:
                   name: cosmocc-dist
